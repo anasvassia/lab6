@@ -30,9 +30,12 @@ with the testing framework on the course grading server. Exercises 1
 and 9 are required for compilation.
 
 ........................................................................
-Exercise 1: There are two kinds of residences in Camlville.  A house
-in Camlville has a street name, zip code, and mailbox number. An
-apartment in Camlville has a street name, zip code, mailbox number
+Exercise 1: There are two kinds of residences in Camlville. 
+ A house
+in Camlville has a street name, zip code, and mailbox number.
+
+An apartment
+in Camlville has a street name, zip code, mailbox number
 (consistent for all units in the apartment), and a unit number.
 
 Define a variant type to capture the idea of a residence. What
@@ -59,8 +62,28 @@ How might you use ADTs to enforce this invariant on street names?
 (Try this exercise first. If you can't get it to compile against our
 unit tests, see http://tiny.cc/lab6-1 for our solution.)
 ......................................................................*)
+(*
+type street = | Stephansplatz
+              | Stiftgasse
+              | MassAve
+              | MainStreet
+type residence = | House of {str : street; zip : string; mailbox : int}
+                 | Apartment of 
+                  {str : street; zip : string; mailbox: int; unit_num : int} ;;
+  *)
 
-type residence = NotImplemented ;;
+                
+type street =
+  | Stephansplatz
+  | Stiftgasse
+  | MassAve
+  | MainStreet ;;
+
+type address = {mailbox : int; street : street; zip_code : string} ;;
+
+type residence =
+  | House of address
+  | Apartment of int * address ;;                  
 
 (* After implementing the residence type, please compare with our type
 definition at http://tiny.cc/lab6-1. Consider the tradeoffs we may
@@ -86,8 +109,17 @@ You do not have to worry about properly handling strings interpreted
 as non-base-10 numbers. For example, "0x100" (hexadecimal) may or may
 not pass your test but "abcde" definitely should not.
 ......................................................................*)
+(*
+let valid_zip (z : string) : bool = 
+  String.length z = 5 && int_of_string_opt z <> None ;;
+  
+this was so close; but doesn't check if the zip is negative*)
 
-let valid_zip = fun _ -> failwith "valid_zip not implemented" ;;
+let valid_zip (zip : string) : bool =
+  String.length zip = 5
+  && match int_of_string_opt zip with
+    | None -> false
+    | Some x -> x >= 0 ;;
 
 (*......................................................................
 Exercise 3: Define a function, valid_residence, that enforces proper
@@ -95,8 +127,12 @@ zipcodes, and mailbox and unit numbers above 0. It should return true
 if it is valid and false otherwise.
 ......................................................................*)
 
-let valid_residence =
-  fun _ -> failwith "valid_residence not implemented" ;;
+let valid_residence (r  : residence) : bool =
+  let valid_address (a : address) : bool =
+    valid_zip a.zip_code && a.mailbox > 0 in
+  match r with
+  | House a -> valid_address a 
+  | Apartment (u, a) -> valid_address a && u > 0 ;;
 
 (*......................................................................
 Exercise 4: Time to get neighborly. Define a function that takes two
@@ -107,10 +143,23 @@ street in the same zipcode.
 Note: By this definition, a residence is considered to be its own
 neighbor.
 ......................................................................*)
-
+(*
 let neighbors (place1 : residence) (place2 : residence) : bool =
-  failwith "neighbors not implemented" ;;
-     
+  let same_street_zip (p1 : address) (p2 : address) : bool =
+    p1.street = p2.street &&  p1.zip_code = p2.zip_code in
+  match place1, place2 with
+  | House a, House b
+  | Apartment (_, a), Apartment (_, b)
+  | House a, Apartment (_, b)
+  | Apartment (_, b), House a -> same_street_zip a b ;;   *) 
+  
+  let extract_address (r : residence) : address =
+    match r with
+    | House addr
+    | Apartment(_, addr) -> addr ;;
+  let neighbors (place1 : residence) (place2 : residence) : bool =
+    let addr1, addr2 = extract_address place1, extract_address place2 in
+      addr1.street = addr2.street && addr1.zip_code = addr2.zip_code ;;
 (*......................................................................
 Exercise 5: Lucky 7
 
@@ -123,7 +172,9 @@ residence he will pick. If the two street numbers are equidistant from
 preferences.
 ......................................................................*)
 let close_to_seven (r1 : residence) (r2 : residence) : residence =
-  failwith "close_to_seven not implemented" ;;
+  let a1, a2 = extract_address r1, extract_address r2 in
+  if abs (7 - a1.mailbox) <= abs (7 - a2.mailbox) then r1
+  else r2 ;;
      
 (*......................................................................
 Exercise 6: Bob has recently gotten a raise, so now he has a whole
@@ -137,8 +188,9 @@ mind that Bob is picky and so some circumstances may arise in which
 there are no houses on Bob's list. For that reason, you should return
 a residence option type.
 ......................................................................*)
-let choose_residence =
-  fun _ -> failwith "choose_residence not implemented" ;;
+let choose_residence (residences : residence list) : residence option =
+  Some (List.fold_left close_to_seven (List.hd residences) residences);;
+  
 (*......................................................................
 Exercise 7: When buyers purchase a new residence in Camlville, they
 must register the street name and address with the town hall, which
