@@ -219,6 +219,7 @@ type town_record = {residence : residence; name : string } ;;
 let record_residence (address : residence) (name : string) : town_record =
   if valid_residence address then {residence = address; name = name}
   else raise (Invalid_argument "please eneter valid address") ;;
+
 (*......................................................................
 Exercise 8: Neighbor search.
 
@@ -267,7 +268,7 @@ our unit tests.
 
 type 'a bintree = 
   | Leaf
-  | Tree of 'a * 'a bintree * 'a bintree ;;
+  | Node of 'a * 'a bintree * 'a bintree ;;
 
 (*......................................................................
 Exercise 10: Define a function leaf_count : 'a bintree -> int, which
@@ -277,7 +278,7 @@ returns the number of leaves in a binary tree.
 let rec leaf_count (t : 'a bintree) : int =
   match t with
   | Leaf -> 1
-  | Tree (_, t1, t2) -> (leaf_count t1) + (leaf_count t2) ;;
+  | Node (_, t1, t2) -> (leaf_count t1) + (leaf_count t2) ;;
 
 (*......................................................................
 Exercise 11: Define a function "find", such that "find tree value"
@@ -287,7 +288,7 @@ otherwise.
 let rec find (v : 'a) (t : 'a bintree) : bool = 
   match t with
   | Leaf -> false
-  | Tree (node, t1, t2) ->
+  | Node (node, t1, t2) ->
     node = v || (find v t1) || (find v t2) ;;
      
 (*......................................................................
@@ -313,7 +314,7 @@ let rec min_value (tree : 'a bintree): 'a option =
         Some (if v1 < v2 then v1 else v2) in
     match tree with
     | Leaf -> None
-    | Tree (value, left, right) -> 
+    | Node (value, left, right) -> 
       min_opt (Some value)(min_opt (min_value left)(min_value right)) ;;
 
 (*......................................................................
@@ -327,4 +328,4 @@ polymorphism.
 let rec map_tree (f : 'a -> 'b) (t : 'a bintree) : 'b bintree =
  match t with
  | Leaf -> Leaf
- | Tree (node, left, right) -> Tree ((f node), (map_tree f left), (map_tree f  right)) ;;
+ | Node (node, left, right) -> Node ((f node), (map_tree f left), (map_tree f  right)) ;;
