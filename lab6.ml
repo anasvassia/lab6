@@ -188,9 +188,19 @@ mind that Bob is picky and so some circumstances may arise in which
 there are no houses on Bob's list. For that reason, you should return
 a residence option type.
 ......................................................................*)
-let choose_residence (residences : residence list) : residence option =
-  Some (List.fold_left close_to_seven (List.hd residences) residences);;
-  
+(* let choose_residence (residences : residence list) : residence option =
+  Some (List.fold_left close_to_seven (List.hd residences) residences);;  *)
+
+  let choose_residence : residence list -> residence option =
+    let compare_res (best_choice : residence option)
+                    (curr_option : residence)
+                  : residence option =
+      match best_choice with
+      | None -> Some curr_option
+      | Some best -> 
+        Some (close_to_seven best curr_option) in
+    List.fold_left compare_res None ;;
+
 (*......................................................................
 Exercise 7: When buyers purchase a new residence in Camlville, they
 must register the street name and address with the town hall, which
@@ -204,10 +214,11 @@ into historical records and has asked you to do the same by raising an
 Invalid_argument exception when appropriate.
 ......................................................................*)
 
-type town_record = { residence : residence; name : string } ;;
+type town_record = {residence : residence; name : string } ;;
 
 let record_residence (address : residence) (name : string) : town_record =
-  failwith "record_residence not implemented" ;;
+  if valid_residence address then {residence = address; name = name}
+  else raise (Invalid_argument "please eneter valid address") ;;
 (*......................................................................
 Exercise 8: Neighbor search.
 
@@ -225,8 +236,13 @@ Failure exception in the event that one of Bob's coworkers
 does not appear in his list of records.
 ......................................................................*)
    
-let named_neighbors =
-  fun _ -> failwith "neighbors2 not implemented" ;;
+let named_neighbors (name1 : string) (name2 : string)(records : town_record list): bool =
+  let find_residence_with_name name =
+    try
+      (List.find (fun r -> r.name = name) records).residence
+    with Not_found -> failwith "named_neighbors: name not found" in
+  neighbors (find_residence_with_name name1)
+      (find_residence_with_name name2) ;;
 
 (*======================================================================
                          Part 2: Binary trees
@@ -249,22 +265,31 @@ with it so that your further work in the lab will be consistent with
 our unit tests.
 ......................................................................*)
 
-type 'a bintree = NotImplemented ;;
+type 'a bintree = 
+  | Leaf
+  | Tree of 'a * 'a bintree * 'a bintree ;;
 
 (*......................................................................
 Exercise 10: Define a function leaf_count : 'a bintree -> int, which
 returns the number of leaves in a binary tree.
 ......................................................................*)
 
-let leaf_count =
-  fun _ -> failwith "leaf_count not implemented" ;;
+let rec leaf_count (t : 'a bintree) : int =
+  match t with
+  | Leaf -> 1
+  | Tree (node, t1, t2) -> (leaf_count t1) + (leaf_count t2) ;;
+(*node cannot be a leaf*)
 
 (*......................................................................
 Exercise 11: Define a function "find", such that "find tree value"
 returns true if value is stored at some node in the tree and false
 otherwise.
 ......................................................................*)
-let find = fun _ -> failwith "find not implemented" ;;
+let rec find (v : 'a) (t : 'a bintree) : bool = 
+  match t with
+  | Leaf -> false
+  | Tree (node, t1, t2) ->
+    node = v || (find v t1) || (find v t2) ;;
      
 (*......................................................................
 Exercise 12: Define a function "min_value", such that "min_value tree"
@@ -272,9 +297,25 @@ returns the minimum value stored in a tree as an option type, and None
 if the tree has no stored values. Use the < operator for comparing
 values stored in the nodes of the tree.
 ......................................................................*)
+(*
+let rec min_value (tree : 'a bintree): 'a option =
+  match tree with
+  | Leaf -> None
+  |  Tree (node, t1, t2) -> Some (min node (min (min_value t1) (min_value t2))) ;;
+  *)
 
-let min_value (tree : 'a bintree): 'a option =
-  failwith "min_value not implemented" ;;
+  let rec min_value (tree : 'a bintree): 'a option =
+    let min_opt x y =
+      match x, y with
+      | None, None -> None
+      | None, Some v -> Some v
+      | Some v, None -> Some v
+      | Some v1, Some v2 -> 
+        Some (if v1 < v2 then v1 else v2) in
+    match tree with
+    | Leaf -> None
+    | Tree (value, left, right) -> 
+      min_opt (Some value)(min_opt (min_value left)(min_value right)) ;;
 
 (*......................................................................
 Exercise 13: Define a function "map_tree", such that "map_tree fn
@@ -284,5 +325,7 @@ want to think carefully about the type of map_tree to maximize its
 polymorphism.
 ......................................................................*)
 
-let map_tree =
-  fun () -> failwith "map_tree not implemented" ;;
+let rec map_tree (f : 'a -> 'b) (t : 'a bintree) : 'b bintree =
+ match t with
+ | Leaf -> Leaf
+ | Tree (node, left, right) -> Tree ((f node), (map_tree f left), (map_tree f  right)) ;;
