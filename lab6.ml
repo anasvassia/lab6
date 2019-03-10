@@ -285,11 +285,11 @@ Exercise 11: Define a function "find", such that "find tree value"
 returns true if value is stored at some node in the tree and false
 otherwise.
 ......................................................................*)
-let rec find (v : 'a) (t : 'a bintree) : bool = 
+let rec find (t : 'a bintree) (v : 'a) : bool = 
   match t with
   | Leaf -> false
   | Node (node, t1, t2) ->
-    node = v || (find v t1) || (find v t2) ;;
+    (node = v) || (find t1 v) || (find t2 v) ;;
      
 (*......................................................................
 Exercise 12: Define a function "min_value", such that "min_value tree"
