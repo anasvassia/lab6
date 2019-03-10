@@ -277,8 +277,7 @@ returns the number of leaves in a binary tree.
 let rec leaf_count (t : 'a bintree) : int =
   match t with
   | Leaf -> 1
-  | Tree (node, t1, t2) -> (leaf_count t1) + (leaf_count t2) ;;
-(*node cannot be a leaf*)
+  | Tree (_, t1, t2) -> (leaf_count t1) + (leaf_count t2) ;;
 
 (*......................................................................
 Exercise 11: Define a function "find", such that "find tree value"
